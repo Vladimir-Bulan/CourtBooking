@@ -1,45 +1,45 @@
-﻿# ðŸŸï¸ CourtBooking API
+﻿# CourtBooking API
 
-API REST para gestiÃ³n de reservas de canchas deportivas (Padel, FÃºtbol, Tenis, etc.) construida con **.NET 8** y **Clean Architecture**.
+API REST para gestion de reservas de canchas deportivas (Padel, Futbol, Tenis, etc.) construida con **.NET 8** y **Clean Architecture**.
 
-## ðŸ› ï¸ Tech Stack
+## Tech Stack
 
-| Capa | TecnologÃ­a |
+| Capa | Tecnologia |
 |------|-----------|
 | Framework | ASP.NET Core 8 |
 | ORM | Entity Framework Core 8 |
 | Base de datos | SQL Server |
-| AutenticaciÃ³n | JWT Bearer Tokens |
+| Autenticacion | JWT Bearer Tokens |
 | Password Hashing | BCrypt |
-| DocumentaciÃ³n | Swagger / OpenAPI |
+| Documentacion | Swagger / OpenAPI |
 | Arquitectura | Clean Architecture |
 
-## ðŸ“ Arquitectura
+## Arquitectura
 
 ```
 CourtBooking/
-â”œâ”€â”€ src/
-â”‚   â”œâ”€â”€ CourtBooking.Domain/          # Entidades, Enums, Interfaces de Repos
-â”‚   â”‚   â”œâ”€â”€ Entities/                 # User, Court, Booking
-â”‚   â”‚   â”œâ”€â”€ Enums/                    # BookingStatus, SportType, etc.
-â”‚   â”‚   â””â”€â”€ Interfaces/               # IUserRepository, ICourtRepository...
-â”‚   â”‚
-â”‚   â”œâ”€â”€ CourtBooking.Application/     # LÃ³gica de negocio, DTOs, Interfaces de Servicios
-â”‚   â”‚   â”œâ”€â”€ DTOs/                     # Auth, Courts, Bookings
-â”‚   â”‚   â”œâ”€â”€ Interfaces/               # IAuthService, IBookingService...
-â”‚   â”‚   â””â”€â”€ Services/                 # AuthService, BookingService, CourtService
-â”‚   â”‚
-â”‚   â”œâ”€â”€ CourtBooking.Infrastructure/  # Implementaciones de repositorios y servicios externos
-â”‚   â”‚   â”œâ”€â”€ Data/                     # AppDbContext + Seed Data
-â”‚   â”‚   â”œâ”€â”€ Repositories/             # UserRepo, CourtRepo, BookingRepo
-â”‚   â”‚   â””â”€â”€ Services/                 # JwtService, EmailService
-â”‚   â”‚
-â”‚   â””â”€â”€ CourtBooking.API/             # Controllers, Middleware, Program.cs
-â”‚       â”œâ”€â”€ Controllers/              # Auth, Courts, Bookings, Admin
-â”‚       â””â”€â”€ Middleware/               # ExceptionMiddleware
+├── src/
+│   ├── CourtBooking.Domain/          # Entidades, Enums, Interfaces de Repos
+│   │   ├── Entities/                 # User, Court, Booking
+│   │   ├── Enums/                    # BookingStatus, SportType, etc.
+│   │   └── Interfaces/               # IUserRepository, ICourtRepository...
+│   │
+│   ├── CourtBooking.Application/     # Logica de negocio, DTOs, Interfaces de Servicios
+│   │   ├── DTOs/                     # Auth, Courts, Bookings
+│   │   ├── Interfaces/               # IAuthService, IBookingService...
+│   │   └── Services/                 # AuthService, BookingService, CourtService
+│   │
+│   ├── CourtBooking.Infrastructure/  # Implementaciones de repos y servicios externos
+│   │   ├── Data/                     # AppDbContext + Seed Data
+│   │   ├── Repositories/             # UserRepo, CourtRepo, BookingRepo
+│   │   └── Services/                 # JwtService, EmailService
+│   │
+│   └── CourtBooking.API/             # Controllers, Middleware, Program.cs
+│       ├── Controllers/              # Auth, Courts, Bookings, Admin
+│       └── Middleware/               # ExceptionMiddleware
 ```
 
-## ðŸš€ CÃ³mo correr el proyecto
+## Como correr el proyecto
 
 ### Requisitos
 - .NET 8 SDK
@@ -64,22 +64,16 @@ En `src/CourtBooking.API/appsettings.json`:
 }
 ```
 
-### 3. Aplicar migraciones
+### 3. Correr la API
 
 ```bash
 cd src/CourtBooking.API
-dotnet ef database update --project ../CourtBooking.Infrastructure
+dotnet run
 ```
 
-> âš¡ O simplemente corrÃ© la API â€” aplica las migraciones automÃ¡ticamente al arrancar.
+> La API aplica las migraciones automaticamente al arrancar y crea la base de datos.
 
-### 4. Correr la API
-
-```bash
-dotnet run --project src/CourtBooking.API
-```
-
-### 5. Acceder a Swagger
+### 4. Acceder a Swagger
 
 ```
 http://localhost:5000
@@ -87,13 +81,13 @@ http://localhost:5000
 
 ---
 
-## ðŸ” AutenticaciÃ³n
+## Autenticacion
 
 La API usa **JWT Bearer Tokens**. Para endpoints protegidos:
 
-1. Registrarse o hacer login en `/api/auth/register` o `/api/auth/login`
-2. Copiar el token de la respuesta
-3. En Swagger: click en **Authorize** â†’ `Bearer {tu_token}`
+1. Login en `POST /api/auth/login`
+2. Copiar el `token` de la respuesta
+3. En Swagger: click en **Authorize** → `Bearer {tu_token}`
 
 ### Usuario Admin (seed)
 ```
@@ -103,62 +97,62 @@ Password: Admin123!
 
 ---
 
-## ðŸ“‹ Endpoints
+## Endpoints
 
 ### Auth
-| MÃ©todo | Ruta | DescripciÃ³n | Auth |
+| Metodo | Ruta | Descripcion | Auth |
 |--------|------|-------------|------|
-| POST | `/api/auth/register` | Registrar usuario | âŒ |
-| POST | `/api/auth/login` | Login | âŒ |
+| POST | `/api/auth/register` | Registrar usuario | Publico |
+| POST | `/api/auth/login` | Login | Publico |
 
 ### Canchas
-| MÃ©todo | Ruta | DescripciÃ³n | Auth |
+| Metodo | Ruta | Descripcion | Auth |
 |--------|------|-------------|------|
-| GET | `/api/courts` | Listar todas las canchas | âŒ |
-| GET | `/api/courts/{id}` | Obtener cancha por ID | âŒ |
-| GET | `/api/courts/available?startTime=&endTime=` | Canchas disponibles | âŒ |
-| POST | `/api/courts` | Crear cancha | ðŸ” Admin |
-| PUT | `/api/courts/{id}` | Actualizar cancha | ðŸ” Admin |
-| DELETE | `/api/courts/{id}` | Eliminar cancha | ðŸ” Admin |
+| GET | `/api/courts` | Listar todas las canchas | Publico |
+| GET | `/api/courts/{id}` | Obtener cancha por ID | Publico |
+| GET | `/api/courts/available?startTime=&endTime=` | Canchas disponibles | Publico |
+| POST | `/api/courts` | Crear cancha | Admin |
+| PUT | `/api/courts/{id}` | Actualizar cancha | Admin |
+| DELETE | `/api/courts/{id}` | Eliminar cancha | Admin |
 
 ### Reservas
-| MÃ©todo | Ruta | DescripciÃ³n | Auth |
+| Metodo | Ruta | Descripcion | Auth |
 |--------|------|-------------|------|
-| GET | `/api/bookings` | Listar todas las reservas | ðŸ” Admin |
-| GET | `/api/bookings/my` | Mis reservas | ðŸ” User |
-| GET | `/api/bookings/{id}` | Detalle de reserva | ðŸ” User |
-| POST | `/api/bookings` | Crear reserva | ðŸ” User |
-| PUT | `/api/bookings/{id}/reschedule` | Reprogramar reserva | ðŸ” User |
-| PUT | `/api/bookings/{id}/cancel` | Cancelar reserva | ðŸ” User |
-| PUT | `/api/bookings/{id}/confirm` | Confirmar reserva | ðŸ” Admin |
+| GET | `/api/bookings` | Listar todas las reservas | Admin |
+| GET | `/api/bookings/my` | Mis reservas | User |
+| GET | `/api/bookings/{id}` | Detalle de reserva | User |
+| POST | `/api/bookings` | Crear reserva | User |
+| PUT | `/api/bookings/{id}/reschedule` | Reprogramar reserva | User |
+| PUT | `/api/bookings/{id}/cancel` | Cancelar reserva | User |
+| PUT | `/api/bookings/{id}/confirm` | Confirmar reserva | Admin |
 
 ### Admin Dashboard
-| MÃ©todo | Ruta | DescripciÃ³n | Auth |
+| Metodo | Ruta | Descripcion | Auth |
 |--------|------|-------------|------|
-| GET | `/api/admin/dashboard` | EstadÃ­sticas generales | ðŸ” Admin |
-| GET | `/api/admin/users` | Listar usuarios | ðŸ” Admin |
-| PUT | `/api/admin/users/{id}/toggle-status` | Activar/desactivar usuario | ðŸ” Admin |
+| GET | `/api/admin/dashboard` | Estadisticas generales | Admin |
+| GET | `/api/admin/users` | Listar usuarios | Admin |
+| PUT | `/api/admin/users/{id}/toggle-status` | Activar/desactivar usuario | Admin |
 
 ---
 
-## ðŸ’¡ Features principales
+## Features
 
-- âœ… **Clean Architecture** â€” Domain, Application, Infrastructure, API
-- âœ… **JWT Auth** con roles (Admin / User)
-- âœ… **ValidaciÃ³n de disponibilidad** â€” detecta conflictos de horario en tiempo real
-- âœ… **Reservar, reprogramar y cancelar** turnos
-- âœ… **Panel Admin** con stats (ingresos, reservas del dÃ­a, usuarios)
-- âœ… **Notificaciones por email** (configurable via SMTP)
-- âœ… **Soft delete** en entidades
-- âœ… **Global Exception Middleware** â€” manejo de errores centralizado
-- âœ… **Swagger** con soporte JWT integrado
-- âœ… **Seed data** con admin y 3 canchas de ejemplo
+- **Clean Architecture** — Domain, Application, Infrastructure, API
+- **JWT Auth** con roles (Admin / User)
+- **Validacion de disponibilidad** — detecta conflictos de horario en tiempo real
+- **Reservar, reprogramar y cancelar** turnos
+- **Panel Admin** con stats (ingresos, reservas del dia, usuarios)
+- **Notificaciones por email** configurables via SMTP
+- **Soft delete** en entidades
+- **Global Exception Middleware** — manejo de errores centralizado
+- **Swagger** con soporte JWT integrado
+- **Seed data** con admin y 3 canchas de ejemplo
 
 ---
 
-## ðŸ“§ Configurar emails (opcional)
+## Configurar emails (opcional)
 
-En `appsettings.json`:
+En `appsettings.json` cambiar `Enabled` a `true` y completar los datos SMTP:
 
 ```json
 "Email": {
@@ -171,11 +165,10 @@ En `appsettings.json`:
 }
 ```
 
-> Para Gmail: activar 2FA y generar una **App Password** en la cuenta de Google.
+Para Gmail: activar 2FA y generar una **App Password** en la configuracion de cuenta de Google.
 
 ---
 
-## ðŸ‘¤ Autor
+## Autor
 
-**Vladimir Bulan** â€” [GitHub](https://github.com/Vladimir-Bulan) | [LinkedIn](https://www.linkedin.com/in/vladimir-bulan-60083b21b/)
-
+**Vladimir Bulan** — [GitHub](https://github.com/Vladimir-Bulan) | [LinkedIn](https://www.linkedin.com/in/vladimir-bulan-60083b21b/)
