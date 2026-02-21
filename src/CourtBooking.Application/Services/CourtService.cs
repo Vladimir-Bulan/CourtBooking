@@ -1,4 +1,5 @@
-﻿using CourtBooking.Application.DTOs.Courts;
+using CourtBooking.Application.DTOs.Common;
+using CourtBooking.Application.DTOs.Courts;
 using CourtBooking.Application.Interfaces;
 using CourtBooking.Domain.Entities;
 using CourtBooking.Domain.Interfaces;
@@ -14,10 +15,36 @@ public class CourtService : ICourtService
         _courtRepository = courtRepository;
     }
 
-    public async Task<IEnumerable<CourtDto>> GetAllAsync()
+    public async Task<PagedResult<CourtDto>> GetAllAsync(PaginationParams pagination, CourtFilterRequest? filter = null)
     {
         var courts = await _courtRepository.GetAllAsync();
-        return courts.Select(MapToDto);
+
+        if (filter?.SportType is not null && Enum.TryParse<Domain.Enums.SportType>(filter.SportType, out var sport))
+            courts = courts.Where(c => c.SportType == sport);
+
+        if (filter?.Surface is not null && Enum.TryParse<Domain.Enums.CourtSurface>(filter.Surface, out var surface))
+            courts = courts.Where(c => c.Surface == surface);
+
+        if (filter?.MaxHourlyRate.HasValue == true)
+            courts = courts.Where(c => c.HourlyRate <= filter.MaxHourlyRate.Value);
+
+        if (filter?.IsAvailable.HasValue == true)
+            courts = courts.Where(c => c.IsAvailable == filter.IsAvailable.Value);
+
+        var totalCount = courts.Count();
+        var data = courts
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(MapToDto)
+            .ToList();
+
+        return new PagedResult<CourtDto>
+        {
+            Data = data,
+            TotalCount = totalCount,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize
+        };
     }
 
     public async Task<CourtDto?> GetByIdAsync(Guid id)
@@ -69,7 +96,6 @@ public class CourtService : ICourtService
         if (request.ClosingTime is not null) court.ClosingTime = TimeSpan.Parse(request.ClosingTime);
 
         court.UpdatedAt = DateTime.UtcNow;
-
         await _courtRepository.UpdateAsync(court);
         return MapToDto(court);
     }
@@ -97,4 +123,3 @@ public class CourtService : ICourtService
         ClosingTime = court.ClosingTime.ToString(@"hh\:mm")
     };
 }
-

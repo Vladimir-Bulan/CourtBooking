@@ -1,5 +1,6 @@
-﻿using CourtBooking.Application.DTOs.Auth;
+using CourtBooking.Application.DTOs.Auth;
 using CourtBooking.Application.DTOs.Bookings;
+using CourtBooking.Application.DTOs.Common;
 using CourtBooking.Application.DTOs.Courts;
 
 namespace CourtBooking.Application.Interfaces;
@@ -12,7 +13,7 @@ public interface IAuthService
 
 public interface ICourtService
 {
-    Task<IEnumerable<CourtDto>> GetAllAsync();
+    Task<PagedResult<CourtDto>> GetAllAsync(PaginationParams pagination, CourtFilterRequest? filter = null);
     Task<CourtDto?> GetByIdAsync(Guid id);
     Task<IEnumerable<CourtDto>> GetAvailableAsync(DateTime startTime, DateTime endTime);
     Task<CourtDto> CreateAsync(CreateCourtRequest request);
@@ -22,9 +23,9 @@ public interface ICourtService
 
 public interface IBookingService
 {
-    Task<IEnumerable<BookingDto>> GetAllAsync(BookingFilterRequest? filter = null);
+    Task<PagedResult<BookingDto>> GetAllAsync(BookingFilterRequest? filter = null, PaginationParams? pagination = null);
     Task<BookingDto?> GetByIdAsync(Guid id);
-    Task<IEnumerable<BookingDto>> GetMyBookingsAsync(Guid userId);
+    Task<PagedResult<BookingDto>> GetMyBookingsAsync(Guid userId, PaginationParams pagination);
     Task<BookingDto> CreateAsync(Guid userId, CreateBookingRequest request);
     Task<BookingDto> RescheduleAsync(Guid bookingId, Guid userId, RescheduleBookingRequest request);
     Task<BookingDto> CancelAsync(Guid bookingId, Guid userId, CancelBookingRequest request);
@@ -44,4 +45,3 @@ public interface IJwtService
     bool ValidateToken(string token);
     Guid GetUserIdFromToken(string token);
 }
-

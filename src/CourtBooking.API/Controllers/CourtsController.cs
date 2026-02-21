@@ -1,4 +1,5 @@
-﻿using CourtBooking.Application.DTOs.Courts;
+using CourtBooking.Application.DTOs.Common;
+using CourtBooking.Application.DTOs.Courts;
 using CourtBooking.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,13 +17,28 @@ public class CourtsController : ControllerBase
         _courtService = courtService;
     }
 
-    /// <summary>Get all courts</summary>
+    /// <summary>Get all courts with pagination and optional filters</summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CourtDto>), 200)]
-    public async Task<IActionResult> GetAll()
+    [ProducesResponseType(typeof(PagedResult<CourtDto>), 200)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? sportType = null,
+        [FromQuery] string? surface = null,
+        [FromQuery] decimal? maxHourlyRate = null,
+        [FromQuery] bool? isAvailable = null)
     {
-        var courts = await _courtService.GetAllAsync();
-        return Ok(courts);
+        var pagination = new PaginationParams { Page = page, PageSize = pageSize };
+        var filter = new CourtFilterRequest
+        {
+            SportType = sportType,
+            Surface = surface,
+            MaxHourlyRate = maxHourlyRate,
+            IsAvailable = isAvailable
+        };
+
+        var result = await _courtService.GetAllAsync(pagination, filter);
+        return Ok(result);
     }
 
     /// <summary>Get court by ID</summary>
@@ -97,4 +113,3 @@ public class CourtsController : ControllerBase
         }
     }
 }
-

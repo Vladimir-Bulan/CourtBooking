@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using CourtBooking.Application.DTOs.Common;
 using CourtBooking.Application.DTOs.Courts;
 using CourtBooking.Application.Services;
 using CourtBooking.Domain.Enums;
@@ -33,11 +34,56 @@ public class CourtServiceTests
         _courtRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(courts);
 
         // Act
-        var result = await _courtService.GetAllAsync();
+        var result = await _courtService.GetAllAsync(new PaginationParams { Page = 1, PageSize = 10 });
 
         // Assert
-        result.Should().HaveCount(3);
-        result.Select(c => c.Name).Should().Contain(new[] { "Cancha 1", "Cancha 2", "Cancha 3" });
+        result.Should().NotBeNull();
+        result.TotalCount.Should().Be(3);
+        result.Data.Should().HaveCount(3);
+        result.Data.Select(c => c.Name).Should().Contain(new[] { "Cancha 1", "Cancha 2", "Cancha 3" });
+    }
+
+    [Fact]
+    public async Task GetAll_WithPagination_ReturnsCorrectPage()
+    {
+        // Arrange
+        var courts = Enumerable.Range(1, 15)
+            .Select(i => TestBuilders.BuildCourt(name: $"Cancha {i}"))
+            .ToArray();
+        _courtRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(courts);
+
+        // Act
+        var result = await _courtService.GetAllAsync(new PaginationParams { Page = 2, PageSize = 5 });
+
+        // Assert
+        result.TotalCount.Should().Be(15);
+        result.Data.Should().HaveCount(5);
+        result.Page.Should().Be(2);
+        result.TotalPages.Should().Be(3);
+        result.HasNextPage.Should().BeTrue();
+        result.HasPreviousPage.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAll_WithSportTypeFilter_ReturnsFilteredCourts()
+    {
+        // Arrange
+        var courts = new[]
+        {
+            TestBuilders.BuildCourt(name: "Padel 1", sportType: SportType.Padel),
+            TestBuilders.BuildCourt(name: "Tenis 1", sportType: SportType.Tennis),
+            TestBuilders.BuildCourt(name: "Padel 2", sportType: SportType.Padel),
+        };
+        _courtRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(courts);
+
+        // Act
+        var result = await _courtService.GetAllAsync(
+            new PaginationParams(),
+            new CourtFilterRequest { SportType = "Padel" });
+
+        // Assert
+        result.TotalCount.Should().Be(2);
+        result.Data.All(c => c.SportType == "Padel").Should().BeTrue();
     }
 
     [Fact]
@@ -104,7 +150,7 @@ public class CourtServiceTests
     {
         // Arrange
         var startTime = DateTime.UtcNow.AddHours(2);
-        var endTime = DateTime.UtcNow.AddHours(1); // end before start
+        var endTime = DateTime.UtcNow.AddHours(1);
 
         // Act
         var act = async () => await _courtService.GetAvailableAsync(startTime, endTime);
@@ -136,13 +182,13 @@ public class CourtServiceTests
         _courtRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Domain.Entities.Court>()))
             .ReturnsAsync((Domain.Entities.Court c) => c);
 
-        var request = new UpdateCourtRequest { Name = "Nombre Nuevo" }; // solo nombre
+        var request = new UpdateCourtRequest { Name = "Nombre Nuevo" };
 
         // Act
         var result = await _courtService.UpdateAsync(court.Id, request);
 
         // Assert
         result.Name.Should().Be("Nombre Nuevo");
-        result.HourlyRate.Should().Be(1000); // sin cambio
+        result.HourlyRate.Should().Be(1000);
     }
 }

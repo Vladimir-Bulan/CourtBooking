@@ -1,4 +1,5 @@
 using CourtBooking.Application.DTOs.Bookings;
+using CourtBooking.Application.DTOs.Common;
 using CourtBooking.Application.Interfaces;
 using CourtBooking.Domain.Entities;
 using CourtBooking.Domain.Enums;
@@ -25,8 +26,10 @@ public class BookingService : IBookingService
         _emailService = emailService;
     }
 
-    public async Task<IEnumerable<BookingDto>> GetAllAsync(BookingFilterRequest? filter = null)
+    public async Task<PagedResult<BookingDto>> GetAllAsync(BookingFilterRequest? filter = null, PaginationParams? pagination = null)
     {
+        pagination ??= new PaginationParams();
+
         IEnumerable<Booking> bookings;
 
         if (filter?.From.HasValue == true && filter?.To.HasValue == true)
@@ -40,7 +43,20 @@ public class BookingService : IBookingService
         if (filter?.CourtId.HasValue == true)
             bookings = bookings.Where(b => b.CourtId == filter.CourtId.Value);
 
-        return bookings.Select(b => MapToDto(b));
+        var totalCount = bookings.Count();
+        var data = bookings
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(b => MapToDto(b))
+            .ToList();
+
+        return new PagedResult<BookingDto>
+        {
+            Data = data,
+            TotalCount = totalCount,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize
+        };
     }
 
     public async Task<BookingDto?> GetByIdAsync(Guid id)
@@ -49,15 +65,28 @@ public class BookingService : IBookingService
         return booking is null ? null : MapToDto(booking);
     }
 
-    public async Task<IEnumerable<BookingDto>> GetMyBookingsAsync(Guid userId)
+    public async Task<PagedResult<BookingDto>> GetMyBookingsAsync(Guid userId, PaginationParams pagination)
     {
         var bookings = await _bookingRepository.GetByUserIdAsync(userId);
-        return bookings.Select(b => MapToDto(b));
+
+        var totalCount = bookings.Count();
+        var data = bookings
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .Select(b => MapToDto(b))
+            .ToList();
+
+        return new PagedResult<BookingDto>
+        {
+            Data = data,
+            TotalCount = totalCount,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize
+        };
     }
 
     public async Task<BookingDto> CreateAsync(Guid userId, CreateBookingRequest request)
     {
-        // Validations
         if (request.EndTime <= request.StartTime)
             throw new ArgumentException("End time must be after start time.");
 
@@ -70,13 +99,11 @@ public class BookingService : IBookingService
         if (!court.IsAvailable)
             throw new InvalidOperationException("Court is not available.");
 
-        // Validate opening hours
         var startHour = request.StartTime.TimeOfDay;
         var endHour = request.EndTime.TimeOfDay;
         if (startHour < court.OpeningTime || endHour > court.ClosingTime)
             throw new InvalidOperationException($"Court is only open from {court.OpeningTime:hh\\:mm} to {court.ClosingTime:hh\\:mm}.");
 
-        // Check conflicts
         var hasConflict = await _bookingRepository.HasConflictAsync(request.CourtId, request.StartTime, request.EndTime);
         if (hasConflict)
             throw new InvalidOperationException("The court is already booked for this time slot.");
@@ -97,7 +124,6 @@ public class BookingService : IBookingService
 
         await _bookingRepository.CreateAsync(booking);
 
-        // Send confirmation email
         var user = await _userRepository.GetByIdAsync(userId);
         if (user is not null)
         {
@@ -107,7 +133,7 @@ public class BookingService : IBookingService
                     user.Email, user.FullName, court.Name,
                     request.StartTime, request.EndTime, totalPrice);
             }
-            catch { /* Don't fail the booking if email fails */ }
+            catch { }
         }
 
         return MapToDto(booking, user, court);
@@ -144,7 +170,6 @@ public class BookingService : IBookingService
 
         await _bookingRepository.UpdateAsync(booking);
 
-        // Send reschedule email
         try
         {
             await _emailService.SendBookingRescheduleAsync(
@@ -177,7 +202,6 @@ public class BookingService : IBookingService
 
         await _bookingRepository.UpdateAsync(booking);
 
-        // Send cancellation email
         try
         {
             await _emailService.SendBookingCancellationAsync(

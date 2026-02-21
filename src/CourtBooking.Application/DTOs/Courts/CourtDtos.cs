@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using CourtBooking.Domain.Enums;
 
 namespace CourtBooking.Application.DTOs.Courts;
@@ -49,3 +49,10 @@ public class CourtAvailabilityRequest
     [Required] public DateTime EndTime { get; set; }
 }
 
+public class CourtFilterRequest
+{
+    public string? SportType { get; set; }
+    public string? Surface { get; set; }
+    public decimal? MaxHourlyRate { get; set; }
+    public bool? IsAvailable { get; set; }
+}

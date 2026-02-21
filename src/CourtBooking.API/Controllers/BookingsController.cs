@@ -1,5 +1,6 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using CourtBooking.Application.DTOs.Bookings;
+using CourtBooking.Application.DTOs.Common;
 using CourtBooking.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,22 +22,31 @@ public class BookingsController : ControllerBase
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    /// <summary>Get all bookings (Admin only)</summary>
+    /// <summary>Get all bookings with pagination (Admin only)</summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(IEnumerable<BookingDto>), 200)]
-    public async Task<IActionResult> GetAll([FromQuery] BookingFilterRequest? filter)
+    [ProducesResponseType(typeof(PagedResult<BookingDto>), 200)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] Guid? courtId = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null)
     {
-        var bookings = await _bookingService.GetAllAsync(filter);
+        var pagination = new PaginationParams { Page = page, PageSize = pageSize };
+        var filter = new BookingFilterRequest { Status = status, CourtId = courtId, From = from, To = to };
+        var bookings = await _bookingService.GetAllAsync(filter, pagination);
         return Ok(bookings);
     }
 
-    /// <summary>Get my bookings</summary>
+    /// <summary>Get my bookings with pagination</summary>
     [HttpGet("my")]
-    [ProducesResponseType(typeof(IEnumerable<BookingDto>), 200)]
-    public async Task<IActionResult> GetMyBookings()
+    [ProducesResponseType(typeof(PagedResult<BookingDto>), 200)]
+    public async Task<IActionResult> GetMyBookings([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var bookings = await _bookingService.GetMyBookingsAsync(CurrentUserId);
+        var pagination = new PaginationParams { Page = page, PageSize = pageSize };
+        var bookings = await _bookingService.GetMyBookingsAsync(CurrentUserId, pagination);
         return Ok(bookings);
     }
 
@@ -79,8 +89,6 @@ public class BookingsController : ControllerBase
     /// <summary>Reschedule a booking</summary>
     [HttpPut("{id:guid}/reschedule")]
     [ProducesResponseType(typeof(BookingDto), 200)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> Reschedule(Guid id, [FromBody] RescheduleBookingRequest request)
     {
         try
@@ -88,7 +96,7 @@ public class BookingsController : ControllerBase
             var booking = await _bookingService.RescheduleAsync(id, CurrentUserId, request);
             return Ok(booking);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
@@ -105,7 +113,6 @@ public class BookingsController : ControllerBase
     /// <summary>Cancel a booking</summary>
     [HttpPut("{id:guid}/cancel")]
     [ProducesResponseType(typeof(BookingDto), 200)]
-    [ProducesResponseType(403)]
     public async Task<IActionResult> Cancel(Guid id, [FromBody] CancelBookingRequest request)
     {
         try
@@ -144,4 +151,3 @@ public class BookingsController : ControllerBase
         }
     }
 }
-
