@@ -1,6 +1,9 @@
 using CourtBooking.Application.DTOs.Common;
 using CourtBooking.Application.DTOs.Courts;
+using CourtBooking.Application.Features.Courts.Commands;
+using CourtBooking.Application.Features.Courts.Queries;
 using CourtBooking.Application.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +13,12 @@ namespace CourtBooking.API.Controllers;
 [Route("api/[controller]")]
 public class CourtsController : ControllerBase
 {
+    private readonly IMediator _mediator;
     private readonly ICourtService _courtService;
 
-    public CourtsController(ICourtService courtService)
+    public CourtsController(IMediator mediator, ICourtService courtService)
     {
+        _mediator = mediator;
         _courtService = courtService;
     }
 
@@ -28,16 +33,11 @@ public class CourtsController : ControllerBase
         [FromQuery] decimal? maxHourlyRate = null,
         [FromQuery] bool? isAvailable = null)
     {
-        var pagination = new PaginationParams { Page = page, PageSize = pageSize };
-        var filter = new CourtFilterRequest
-        {
-            SportType = sportType,
-            Surface = surface,
-            MaxHourlyRate = maxHourlyRate,
-            IsAvailable = isAvailable
-        };
+        var query = new GetAllCourtsQuery(
+            new PaginationParams { Page = page, PageSize = pageSize },
+            new CourtFilterRequest { SportType = sportType, Surface = surface, MaxHourlyRate = maxHourlyRate, IsAvailable = isAvailable });
 
-        var result = await _courtService.GetAllAsync(pagination, filter);
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 
@@ -61,10 +61,7 @@ public class CourtsController : ControllerBase
             var courts = await _courtService.GetAvailableAsync(startTime, endTime);
             return Ok(courts);
         }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     /// <summary>Create a new court (Admin only)</summary>
@@ -73,7 +70,12 @@ public class CourtsController : ControllerBase
     [ProducesResponseType(typeof(CourtDto), 201)]
     public async Task<IActionResult> Create([FromBody] CreateCourtRequest request)
     {
-        var court = await _courtService.CreateAsync(request);
+        var command = new CreateCourtCommand(
+            request.Name, request.Description, request.SportType,
+            request.Surface, request.HourlyRate, request.Capacity,
+            request.OpeningTime, request.ClosingTime, request.ImageUrl);
+
+        var court = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = court.Id }, court);
     }
 
@@ -89,10 +91,7 @@ public class CourtsController : ControllerBase
             var court = await _courtService.UpdateAsync(id, request);
             return Ok(court);
         }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 
     /// <summary>Delete a court (Admin only)</summary>
@@ -107,9 +106,6 @@ public class CourtsController : ControllerBase
             await _courtService.DeleteAsync(id);
             return NoContent();
         }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 }

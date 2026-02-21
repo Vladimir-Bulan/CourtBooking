@@ -1,7 +1,10 @@
 using System.Security.Claims;
 using CourtBooking.Application.DTOs.Bookings;
 using CourtBooking.Application.DTOs.Common;
+using CourtBooking.Application.Features.Bookings.Commands;
+using CourtBooking.Application.Features.Bookings.Queries;
 using CourtBooking.Application.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,10 +15,12 @@ namespace CourtBooking.API.Controllers;
 [Authorize]
 public class BookingsController : ControllerBase
 {
+    private readonly IMediator _mediator;
     private readonly IBookingService _bookingService;
 
-    public BookingsController(IBookingService bookingService)
+    public BookingsController(IMediator mediator, IBookingService bookingService)
     {
+        _mediator = mediator;
         _bookingService = bookingService;
     }
 
@@ -45,8 +50,8 @@ public class BookingsController : ControllerBase
     [ProducesResponseType(typeof(PagedResult<BookingDto>), 200)]
     public async Task<IActionResult> GetMyBookings([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var pagination = new PaginationParams { Page = page, PageSize = pageSize };
-        var bookings = await _bookingService.GetMyBookingsAsync(CurrentUserId, pagination);
+        var query = new GetMyBookingsQuery(CurrentUserId, new PaginationParams { Page = page, PageSize = pageSize });
+        var bookings = await _mediator.Send(query);
         return Ok(bookings);
     }
 
@@ -56,7 +61,7 @@ public class BookingsController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var booking = await _bookingService.GetByIdAsync(id);
+        var booking = await _mediator.Send(new GetBookingByIdQuery(id));
         return booking is null ? NotFound() : Ok(booking);
     }
 
@@ -69,21 +74,19 @@ public class BookingsController : ControllerBase
     {
         try
         {
-            var booking = await _bookingService.CreateAsync(CurrentUserId, request);
+            var command = new CreateBookingCommand(
+                CurrentUserId,
+                request.CourtId,
+                request.StartTime,
+                request.EndTime,
+                request.Notes);
+
+            var booking = await _mediator.Send(command);
             return CreatedAtAction(nameof(GetById), new { id = booking.Id }, booking);
         }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
     /// <summary>Reschedule a booking</summary>
@@ -93,21 +96,13 @@ public class BookingsController : ControllerBase
     {
         try
         {
-            var booking = await _bookingService.RescheduleAsync(id, CurrentUserId, request);
+            var command = new RescheduleBookingCommand(id, CurrentUserId, request.NewStartTime, request.NewEndTime);
+            var booking = await _mediator.Send(command);
             return Ok(booking);
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 
     /// <summary>Cancel a booking</summary>
@@ -117,21 +112,13 @@ public class BookingsController : ControllerBase
     {
         try
         {
-            var booking = await _bookingService.CancelAsync(id, CurrentUserId, request);
+            var command = new CancelBookingCommand(id, CurrentUserId, request.Reason);
+            var booking = await _mediator.Send(command);
             return Ok(booking);
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 
     /// <summary>Confirm a booking (Admin only)</summary>
@@ -145,9 +132,6 @@ public class BookingsController : ControllerBase
             var booking = await _bookingService.ConfirmAsync(id);
             return Ok(booking);
         }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 }

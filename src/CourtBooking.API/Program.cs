@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System.Text;
+using CourtBooking.Application.Features.Bookings.Commands;
 using CourtBooking.Application.Interfaces;
 using CourtBooking.Application.Services;
 using CourtBooking.Domain.Interfaces;
@@ -26,6 +27,10 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// MediatR - register all handlers from Application assembly
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(CreateBookingCommand).Assembly));
 
 var jwtKey = builder.Configuration["Jwt:SecretKey"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -110,4 +115,3 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
-
