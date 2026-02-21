@@ -1,4 +1,4 @@
-﻿using CourtBooking.Domain.Entities;
+using CourtBooking.Domain.Entities;
 
 namespace CourtBooking.Domain.Interfaces;
 
@@ -6,6 +6,7 @@ public interface IUserRepository
 {
     Task<User?> GetByIdAsync(Guid id);
     Task<User?> GetByEmailAsync(string email);
+    Task<User?> GetByRefreshTokenAsync(string refreshToken);
     Task<IEnumerable<User>> GetAllAsync();
     Task<User> CreateAsync(User user);
     Task<User> UpdateAsync(User user);
@@ -35,4 +36,3 @@ public interface IBookingRepository
     Task<Booking> CreateAsync(Booking booking);
     Task<Booking> UpdateAsync(Booking booking);
 }
-

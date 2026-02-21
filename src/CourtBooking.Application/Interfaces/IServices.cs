@@ -9,6 +9,20 @@ public interface IAuthService
 {
     Task<AuthResponse> RegisterAsync(RegisterRequest request);
     Task<AuthResponse> LoginAsync(LoginRequest request);
+    Task<AuthResponse> RefreshTokenAsync(string refreshToken);
+    Task RevokeTokenAsync(Guid userId);
+}
+
+public interface IJwtService
+{
+    string GenerateToken(Guid userId, string email, string role);
+}
+
+public interface IEmailService
+{
+    Task SendBookingConfirmationAsync(string email, string name, string courtName, DateTime start, DateTime end, decimal price);
+    Task SendBookingCancellationAsync(string email, string name, string courtName, DateTime start, string? reason);
+    Task SendBookingRescheduleAsync(string email, string name, string courtName, DateTime start, DateTime end);
 }
 
 public interface ICourtService
@@ -30,18 +44,4 @@ public interface IBookingService
     Task<BookingDto> RescheduleAsync(Guid bookingId, Guid userId, RescheduleBookingRequest request);
     Task<BookingDto> CancelAsync(Guid bookingId, Guid userId, CancelBookingRequest request);
     Task<BookingDto> ConfirmAsync(Guid bookingId);
-}
-
-public interface IEmailService
-{
-    Task SendBookingConfirmationAsync(string toEmail, string userName, string courtName, DateTime startTime, DateTime endTime, decimal totalPrice);
-    Task SendBookingCancellationAsync(string toEmail, string userName, string courtName, DateTime startTime, string? reason);
-    Task SendBookingRescheduleAsync(string toEmail, string userName, string courtName, DateTime newStartTime, DateTime newEndTime);
-}
-
-public interface IJwtService
-{
-    string GenerateToken(Guid userId, string email, string role);
-    bool ValidateToken(string token);
-    Guid GetUserIdFromToken(string token);
 }

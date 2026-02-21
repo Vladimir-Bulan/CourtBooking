@@ -1,4 +1,4 @@
-﻿using CourtBooking.Domain.Common;
+using CourtBooking.Domain.Common;
 using CourtBooking.Domain.Enums;
 
 namespace CourtBooking.Domain.Entities;
@@ -13,8 +13,11 @@ public class User : BaseEntity
     public UserRole Role { get; set; } = UserRole.User;
     public bool IsActive { get; set; } = true;
 
+    // Refresh Token
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiresAt { get; set; }
+
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public string FullName => $"{FirstName} {LastName}";
 }
-

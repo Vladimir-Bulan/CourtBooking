@@ -1,4 +1,4 @@
-﻿using CourtBooking.Domain.Entities;
+using CourtBooking.Domain.Entities;
 using CourtBooking.Domain.Interfaces;
 using CourtBooking.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +19,9 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email) =>
         await _context.Users.FirstOrDefaultAsync(u => u.Email == email.ToLower());
+
+    public async Task<User?> GetByRefreshTokenAsync(string refreshToken) =>
+        await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
 
     public async Task<IEnumerable<User>> GetAllAsync() =>
         await _context.Users.ToListAsync();
@@ -50,4 +53,3 @@ public class UserRepository : IUserRepository
     public async Task<bool> ExistsByEmailAsync(string email) =>
         await _context.Users.AnyAsync(u => u.Email == email.ToLower());
 }
-
